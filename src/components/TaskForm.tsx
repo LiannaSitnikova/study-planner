@@ -1,38 +1,70 @@
 import { useState, type FormEvent } from 'react';
 import type { Priority, Task } from '../types/task';
+import { useTaskContext } from '../hooks/useTaskContext';
 
-interface TaskFormProps {
-  onAddTask: (task: Omit<Task, 'id' | 'completed'>) => void;
+interface TaskFormContentProps {
+  editingTask: Task | null;
+  onAddTask: (taskData: Omit<Task, 'id' | 'completed'>) => void;
+  onUpdateTask: (task: Task) => void;
+  onCancelEdit: () => void;
 }
 
-export const TaskForm = ({ onAddTask }: TaskFormProps) => {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('Навчання');
-  const [priority, setPriority] = useState<Priority>('medium');
+const TaskFormContent = ({
+  editingTask,
+  onAddTask,
+  onUpdateTask,
+  onCancelEdit,
+}: TaskFormContentProps) => {
+  const [title, setTitle] = useState(editingTask?.title ?? '');
+  const [description, setDescription] = useState(editingTask?.description ?? '');
+  const [category, setCategory] = useState(editingTask?.category ?? 'Навчання');
+  const [priority, setPriority] = useState<Priority>(editingTask?.priority ?? 'medium');
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
 
-    onAddTask({
-      title: title.trim(),
-      description: description.trim(),
-      category: category.trim() || 'Загальне',
-      priority,
-    });
+    if (editingTask) {
+      onUpdateTask({
+        ...editingTask,
+        title: title.trim(),
+        description: description.trim(),
+        category: category.trim() || 'Загальне',
+        priority,
+      });
+    } else {
+      onAddTask({
+        title: title.trim(),
+        description: description.trim(),
+        category: category.trim() || 'Загальне',
+        priority,
+      });
 
-    setTitle('');
-    setDescription('');
-    setPriority('medium');
+      setTitle('');
+      setDescription('');
+      setPriority('medium');
+    }
   };
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 shadow-sm"
+      className={`border rounded-lg p-4 mb-6 shadow-sm transition-colors ${
+        editingTask
+          ? 'bg-amber-50/70 border-amber-300'
+          : 'bg-gray-50 border-gray-200'
+      }`}
     >
-      <h3 className="text-lg font-semibold text-gray-800 mb-3">Додати нове завдання</h3>
+      <div className="flex justify-between items-center mb-3">
+        <h3 className="text-lg font-semibold text-gray-800">
+          {editingTask ? 'Редагувати завдання' : 'Додати нове завдання'}
+        </h3>
+        {editingTask && (
+          <span className="text-xs font-medium bg-amber-200 text-amber-900 px-2 py-0.5 rounded">
+            Режим редагування
+          </span>
+        )}
+      </div>
 
       <div className="mb-3">
         <label className="block text-sm font-medium text-gray-700 mb-1">Назва*:</label>
@@ -40,7 +72,7 @@ export const TaskForm = ({ onAddTask }: TaskFormProps) => {
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Наприклад: Виконати лабу №8"
+          placeholder="Наприклад: Виконати лабу №9"
           required
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
         />
@@ -82,12 +114,42 @@ export const TaskForm = ({ onAddTask }: TaskFormProps) => {
         </div>
       </div>
 
-      <button
-        type="submit"
-        className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
-      >
-        Додати завдання
-      </button>
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          className={`flex-1 text-white font-medium py-2 px-4 rounded-md transition-colors cursor-pointer ${
+            editingTask
+              ? 'bg-amber-600 hover:bg-amber-700'
+              : 'bg-green-600 hover:bg-green-700'
+          }`}
+        >
+          {editingTask ? 'Зберегти зміни' : 'Додати завдання'}
+        </button>
+
+        {editingTask && (
+          <button
+            type="button"
+            onClick={onCancelEdit}
+            className="px-4 py-2 bg-white border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
+          >
+            Скасувати
+          </button>
+        )}
+      </div>
     </form>
+  );
+};
+
+export const TaskForm = () => {
+  const { addTask, updateTask, editingTask, setEditingTask } = useTaskContext();
+
+  return (
+    <TaskFormContent
+      key={editingTask?.id ?? 'create'}
+      editingTask={editingTask}
+      onAddTask={addTask}
+      onUpdateTask={updateTask}
+      onCancelEdit={() => setEditingTask(null)}
+    />
   );
 };
