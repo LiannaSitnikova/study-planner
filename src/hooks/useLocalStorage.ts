@@ -5,8 +5,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     try {
       const item = window.localStorage.getItem(key);
       return item ? (JSON.parse(item) as T) : initialValue;
-    } catch (error) {
-      console.error(`Помилка читання ключа "${key}" з localStorage:`, error);
+    } catch {
       return initialValue;
     }
   });
@@ -14,8 +13,8 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
   useEffect(() => {
     try {
       window.localStorage.setItem(key, JSON.stringify(storedValue));
-    } catch (error) {
-      console.error(`Помилка запису ключа "${key}" у localStorage:`, error);
+    } catch (storageError) {
+      console.warn('Не вдалося зберегти значення в localStorage:', storageError);
     }
   }, [key, storedValue]);
 
