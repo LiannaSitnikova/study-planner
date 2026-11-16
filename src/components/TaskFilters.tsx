@@ -1,11 +1,15 @@
 import type { FilterStatus } from '../types/task';
+import { useTaskContext } from '../hooks/useTaskContext';
 
-interface TaskFiltersProps {
-  currentFilter: FilterStatus;
-  onFilterChange: (filter: FilterStatus) => void;
-}
+export const TaskFilters = () => {
+  const {
+    filter,
+    setFilter,
+    lastDeletedTask,
+    restoreLastDeleted,
+    resetTasks,
+  } = useTaskContext();
 
-export const TaskFilters = ({ currentFilter, onFilterChange }: TaskFiltersProps) => {
   const filters: { label: string; value: FilterStatus }[] = [
     { label: 'Всі', value: 'all' },
     { label: 'Виконані', value: 'completed' },
@@ -13,23 +17,46 @@ export const TaskFilters = ({ currentFilter, onFilterChange }: TaskFiltersProps)
   ];
 
   return (
-    <div className="flex gap-2 mb-6">
-      {filters.map((f) => {
-        const isActive = currentFilter === f.value;
-        return (
+    <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
+      <div className="flex gap-2">
+        {filters.map((f) => {
+          const isActive = filter === f.value;
+          return (
+            <button
+              key={f.value}
+              onClick={() => setFilter(f.value)}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
+                isActive
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              {f.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {lastDeletedTask && (
           <button
-            key={f.value}
-            onClick={() => onFilterChange(f.value)}
-            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-              isActive
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-            }`}
+            type="button"
+            onClick={restoreLastDeleted}
+            title={`Відновити: ${lastDeletedTask.title}`}
+            className="px-3 py-2 text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-md hover:bg-indigo-100 transition-colors cursor-pointer"
           >
-            {f.label}
+            ↺ Відновити видалену
           </button>
-        );
-      })}
+        )}
+
+        <button
+          type="button"
+          onClick={resetTasks}
+          className="px-3 py-2 text-xs font-medium bg-gray-100 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-200 transition-colors cursor-pointer"
+        >
+          Скинути дані
+        </button>
+      </div>
     </div>
   );
 };
