@@ -1,4 +1,5 @@
 import { httpClient } from '../api/httpClient';
+import { authStorage } from '../utils/authStorage';
 import type {
   ApiTodo,
   PaginatedTasksResult,
@@ -11,6 +12,8 @@ interface TaskMetadata {
   description?: string;
   priority?: Priority;
   category?: string;
+  createdBy?: string;
+  createdAt?: string;
 }
 
 function toTask(dto: ApiTodo, meta?: TaskMetadata): Task {
@@ -21,6 +24,8 @@ function toTask(dto: ApiTodo, meta?: TaskMetadata): Task {
     completed: dto.completed,
     priority: meta?.priority ?? 'medium',
     category: meta?.category ?? 'General',
+    createdBy: meta?.createdBy ?? `User #${dto.userId}`,
+    createdAt: meta?.createdAt ?? new Date().toLocaleDateString('uk-UA'),
   };
 }
 
@@ -48,13 +53,17 @@ export const taskRepository = {
     return toTask(dto, existingMeta);
   },
 
-  async create(taskData: Omit<Task, 'id' | 'completed'>): Promise<Task> {
+  async create(
+    taskData: Pick<Task, 'title' | 'description' | 'category' | 'priority'>
+  ): Promise<Task> {
+    const currentUser = authStorage.getUser();
+
     const dto = await httpClient<ApiTodo>('/todos/add', {
       method: 'POST',
       body: JSON.stringify({
         todo: taskData.title,
         completed: false,
-        userId: 1,
+        userId: currentUser?.id ?? 1,
       }),
     });
 
@@ -62,6 +71,8 @@ export const taskRepository = {
       description: taskData.description,
       priority: taskData.priority,
       category: taskData.category,
+      createdBy: currentUser?.username ?? 'Authorized User',
+      createdAt: new Date().toLocaleString('uk-UA'),
     });
 
     return {
@@ -87,6 +98,8 @@ export const taskRepository = {
       description: updatedTask.description,
       priority: updatedTask.priority,
       category: updatedTask.category,
+      createdBy: updatedTask.createdBy,
+      createdAt: updatedTask.createdAt,
     });
   },
 
@@ -104,6 +117,8 @@ export const taskRepository = {
       description: existingTask.description,
       priority: existingTask.priority,
       category: existingTask.category,
+      createdBy: existingTask.createdBy,
+      createdAt: existingTask.createdAt,
     });
   },
 

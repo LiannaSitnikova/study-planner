@@ -7,9 +7,12 @@ export interface Task {
   completed: boolean;
   priority: Priority;
   category: string;
+  createdBy: string;
+  createdAt: string;
 }
 
 export type FilterStatus = 'all' | 'completed' | 'active';
+export type FilterPriority = 'all' | Priority;
 
 export interface ApiTodo {
   id: number;

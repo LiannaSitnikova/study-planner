@@ -1,64 +1,54 @@
-export class NormalizedApiError extends Error {
-  status?: number;
-  isAborted: boolean;
+import { authStorage } from '../utils/authStorage';
 
-  constructor(message: string, status?: number, isAborted = false) {
-    super(message);
-    this.name = 'NormalizedApiError';
-    this.status = status;
-    this.isAborted = isAborted;
-  }
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://dummyjson.com';
+
+export interface NormalizedApiError {
+  message: string;
+  status?: number;
+  isAborted?: boolean;
 }
 
 export function normalizeApiError(error: unknown): NormalizedApiError {
-  if (error instanceof NormalizedApiError) {
-    return error;
-  }
-
   if (error instanceof DOMException && error.name === 'AbortError') {
-    return new NormalizedApiError('Запит було скасовано', undefined, true);
+    return { message: 'Запит скасовано', isAborted: true };
   }
-
-  if (error instanceof TypeError) {
-    return new NormalizedApiError('Помилка мережі. Перевірте підключення до інтернету.');
-  }
-
   if (error instanceof Error) {
-    return new NormalizedApiError(error.message);
+    return { message: error.message };
   }
-
-  return new NormalizedApiError('Виникла невідома помилка під час запиту до сервера.');
+  return { message: 'Невідома помилка мережі' };
 }
 
-const BASE_URL = (import.meta.env.VITE_API_URL || 'https://dummyjson.com').replace(/\/$/, '');
+export async function httpClient<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const token = authStorage.getToken();
+  const headers = new Headers(options.headers);
 
-export async function httpClient<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const url = `${BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
-
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    });
-
-    if (!response.ok) {
-      let serverMessage = `HTTP помилка ${response.status}`;
-      try {
-        const errorBody = await response.json();
-        if (errorBody?.message) {
-          serverMessage = `${serverMessage}: ${errorBody.message}`;
-        }
-      } catch (parseError) {
-        void parseError;
-      }
-      throw new NormalizedApiError(serverMessage, response.status);
-    }
-
-    return (await response.json()) as T;
-  } catch (error) {
-    throw normalizeApiError(error);
+  if (!headers.has('Content-Type') && options.body) {
+    headers.set('Content-Type', 'application/json');
   }
+
+ if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  const response = await fetch(`${BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    let errorMessage = `HTTP помилка ${response.status}`;
+    try {
+      const errorData = await response.json();
+      if (errorData?.message) {
+        errorMessage = errorData.message;
+      }
+    } catch {
+    }
+    throw new Error(errorMessage);
+  }
+
+  return response.json() as Promise<T>;
 }
