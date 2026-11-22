@@ -46,6 +46,7 @@ export async function httpClient<T>(
         errorMessage = errorData.message;
       }
     } catch {
+      // Ігноруємо помилку парсингу JSON, якщо відповідь порожня
     }
     throw new Error(errorMessage);
   }

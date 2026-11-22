@@ -4,7 +4,7 @@ import type { FilterPriority, FilterStatus, Task, ToastMessage } from '../types/
 import type { TaskFormData } from '../schemas/taskSchema';
 import { taskRepository } from '../repositories/taskRepository';
 import { normalizeApiError } from '../api/httpClient';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { TaskStats } from '../components/TaskStats';
 import { TaskFilters } from '../components/TaskFilters';
 import { TaskList } from '../components/TaskList';

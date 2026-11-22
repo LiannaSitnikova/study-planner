@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 export const ProfilePage = () => {
   const { user, isAuthenticated, logout } = useAuth();

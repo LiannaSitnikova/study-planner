@@ -4,7 +4,7 @@ import type { Task } from '../types/task';
 import type { TaskFormData } from '../schemas/taskSchema';
 import { taskRepository } from '../repositories/taskRepository';
 import { normalizeApiError } from '../api/httpClient';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { TaskFormDialog } from '../components/TaskFormDialog';
 
 export const TaskDetailsPage = () => {
@@ -15,27 +15,23 @@ export const TaskDetailsPage = () => {
 
   const passedTask = (location.state as { task?: Task } | null)?.task;
   const numericId = Number(taskId);
+  const isInvalidId = !numericId || Number.isNaN(numericId);
+  const shouldFetch = !isInvalidId && !(numericId > 254 && Boolean(passedTask));
 
   const [task, setTask] = useState<Task | null>(passedTask ?? null);
-  const [isLoading, setIsLoading] = useState(!passedTask);
-  const [error, setError] = useState<string | null>(null);
+  const [settledId, setSettledId] = useState<number | null>(shouldFetch ? null : numericId);
+  const [error, setError] = useState<string | null>(
+    isInvalidId ? 'Некоректний ID завдання' : null
+  );
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!numericId || Number.isNaN(numericId)) {
-      setError('Некоректний ID завдання');
-      setIsLoading(false);
-      return;
-    }
+  const isLoading = shouldFetch && settledId !== numericId;
 
-    if (numericId > 254 && passedTask) {
-      setIsLoading(false);
-      return;
-    }
+  useEffect(() => {
+    if (!shouldFetch) return;
 
     const controller = new AbortController();
-    setIsLoading(true);
 
     taskRepository
       .getById(
@@ -62,17 +58,18 @@ export const TaskDetailsPage = () => {
             : fresh
         );
         setError(null);
+        setSettledId(numericId);
       })
       .catch((err) => {
         const normalized = normalizeApiError(err);
         if (!normalized.isAborted) {
           setError(normalized.message);
+          setSettledId(numericId);
         }
-      })
-      .finally(() => setIsLoading(false));
+      });
 
     return () => controller.abort();
-  }, [numericId, passedTask]);
+  }, [numericId, passedTask, shouldFetch]);
 
   const handleEditClick = () => {
     if (!isAuthenticated) {

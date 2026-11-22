@@ -1,14 +1,14 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { RouterProvider } from 'react-router/dom';
 import { AuthProvider } from './context/AuthContext';
+import { router } from './routes/router';
 import './index.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
-      <div className="p-6 text-center text-gray-700">
-        Study Planner — налаштування AuthContext
-      </div>
+      <RouterProvider router={router} />
     </AuthProvider>
   </StrictMode>
 );

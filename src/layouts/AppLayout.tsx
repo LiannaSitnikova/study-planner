@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 export const AppLayout = () => {
   const { isAuthenticated, user, logout } = useAuth();

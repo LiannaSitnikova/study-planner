@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router';
 import { loginSchema, type LoginFormData } from '../schemas/authSchema';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { normalizeApiError } from '../api/httpClient';
 
 export const LoginPage = () => {

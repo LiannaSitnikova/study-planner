@@ -1,18 +1,8 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import type { LoginResponse, User } from '../types/auth';
 import { httpClient } from '../api/httpClient';
 import { authStorage } from '../utils/authStorage';
-
-interface AuthContextValue {
-  user: User | null;
-  accessToken: string | null;
-  isAuthenticated: boolean;
-  isRestoring: boolean;
-  login: (username: string, password: string) => Promise<void>;
-  logout: () => void;
-}
-
-const AuthContext = createContext<AuthContextValue | null>(null);
+import { AuthContext } from './authContextObject';
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(() => authStorage.getUser());
@@ -21,10 +11,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const token = authStorage.getToken();
-    if (!token) {
-      setIsRestoring(false);
-      return;
-    }
+    if (!token) return;
 
     httpClient<User>('/auth/me')
       .then((freshUser) => {
@@ -81,12 +68,4 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error('useAuth має використовуватися всередині AuthProvider');
-  }
-  return ctx;
 };
